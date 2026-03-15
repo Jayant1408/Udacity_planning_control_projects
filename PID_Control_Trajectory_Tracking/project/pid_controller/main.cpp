@@ -392,8 +392,9 @@ int main ()
 
           // Compute error of speed
           // double error_throttle;
-          // Compute throttle error using closest point speed
-          double error_throttle = v_points[idx_closest_point] - velocity;
+          // Compute throttle error using closest point speed (cap target speed)
+          double target_speed = std::min(v_points[idx_closest_point], 2.0);
+          double error_throttle = target_speed - velocity;
 
           /**
           * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
@@ -415,7 +416,7 @@ int main ()
 
           // Adapt the negative throttle to break
           if (throttle > 0.0) {
-            throttle_output = throttle;
+            throttle_output = std::min(throttle, 0.4);
             brake_output = 0;
           } else {
             throttle_output = 0;
