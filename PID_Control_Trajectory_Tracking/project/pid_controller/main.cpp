@@ -385,6 +385,9 @@ int main ()
               x_points[lookahead_idx], y_points[lookahead_idx]);
 
           double error_steer = desired_yaw - yaw;
+          // Small left bias to increase clearance around the first vehicle.
+          const double k_left_bias = 0.04;  // radians
+          error_steer += k_left_bias;
 
           // Avoid large steering at standstill.
           if (velocity < 0.2) {
@@ -436,6 +439,8 @@ int main ()
           double cte = std::sqrt(dx_path * dx_path + dy_path * dy_path);
           if (std::abs(error_steer) > 0.25 || cte > 0.5) {
             desired_speed = std::min(desired_speed, 0.8);
+          } else {
+            desired_speed = std::min(desired_speed, 2.5);
           }
           double error_throttle = desired_speed - velocity;
 
