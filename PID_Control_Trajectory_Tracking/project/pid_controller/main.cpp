@@ -256,8 +256,9 @@ int main ()
   // pid_steer.init_controller(1.0, 0.0, 1.0, 1.2, -1.2);
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_steer.init_controller(1.0, 1.0, 1.0, 1.2, -1.2);
-  // Tuned for stronger left/right authority without bias.
-  pid_steer.init_controller(0.35, 0.0010, 0.22, 1.2, -1.2);
+  // Final run (no-collision reference gains)
+  // NOTE: steering output clipped to +/- 0.6 rad (~35 deg)
+  pid_steer.init_controller(0.3, 0.0025, 0.17, 0.60, -0.60);
 
     // initialize pid throttle
   /**
@@ -271,7 +272,8 @@ int main ()
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_throttle.init_controller(1.0, 1.0, 1.0, 1.0, -1.0);
   // Lower gains to reduce overshoot when approaching slower traffic.
-  pid_throttle.init_controller(0.12, 0.0003, 0.05, 1.0, -1.0);
+  // Final run (no-collision reference gains)
+  pid_throttle.init_controller(0.21, 0.0006, 0.080, 1.0, -1.0);
 
 
   h.onMessage([&pid_steer, &pid_throttle, &new_delta_time, &timer, &prev_timer, &i, &prev_timer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
@@ -323,24 +325,9 @@ int main ()
           path_planner(x_points, y_points, v_points, yaw, velocity, goal, is_junction, tl_state, spirals_x, spirals_y, spirals_v, best_spirals);
 
           // Save time and compute delta time
-          // time(&timer);
-          // new_delta_time = difftime(timer, prev_timer);
-          // prev_timer = timer;
-
-          // // static auto prev_time = std::chrono::high_resolution_clock::now();
-          // // auto current_time = std::chrono::high_resolution_clock::now();
-          // // new_delta_time = std::chrono::duration<double>(current_time - prev_time).count();
-          // // prev_time = current_time;
-
-          static auto prev_time = std::chrono::high_resolution_clock::now();
-          auto current_time = std::chrono::high_resolution_clock::now();
-          new_delta_time = std::chrono::duration<double>(current_time - prev_time).count();
-          prev_time = current_time;
-
-
-          if (new_delta_time < 1e-4) {
-            new_delta_time = 1e-2; // 10 milliseconds fallback
-          }
+          time(&timer);
+          new_delta_time = difftime(timer, prev_timer);
+          prev_timer = timer;
 
 
           ////////////////////////////////////////
@@ -363,39 +350,13 @@ int main ()
           y_points
           );
 
-          // Pick a point ahead on the path to avoid steering toward points behind.
-          std::size_t lookahead_idx = idx_closest_point;
-          const double lookahead_dist = 3.5;  // meters
-          while (lookahead_idx + 1 < x_points.size()) {
-            double dx = x_points[lookahead_idx] - x_position;
-            double dy = y_points[lookahead_idx] - y_position;
-            if (std::sqrt(dx * dx + dy * dy) >= lookahead_dist) {
-              break;
-            }
-            ++lookahead_idx;
-          }
-          lookahead_idx =
-              std::min<std::size_t>(lookahead_idx + 4, x_points.size() - 1);
-
-          // Use path tangent as desired heading.
-          std::size_t prev_idx =
-              (lookahead_idx > 0) ? (lookahead_idx - 1) : lookahead_idx;
-          double desired_yaw = angle_between_points(
-              x_points[prev_idx], y_points[prev_idx],
-              x_points[lookahead_idx], y_points[lookahead_idx]);
-
-          double error_steer = desired_yaw - yaw;
-          // Small left bias to increase clearance around the first vehicle.
-          const double k_left_bias = 0.04;  // radians
-          error_steer += k_left_bias;
-
-          // Avoid large steering at standstill.
-          if (velocity < 0.2) {
-            error_steer = 0.0;
-          }
-
-          while (error_steer > M_PI) error_steer -= 2.0 * M_PI;
-          while (error_steer < -M_PI) error_steer += 2.0 * M_PI;
+          // Compute steering error using closest point
+          double error_steer = angle_between_points(
+              x_position,
+              y_position,
+              x_points[idx_closest_point],
+              y_points[idx_closest_point]
+          ) - yaw;
           
 
           /**
@@ -431,22 +392,8 @@ int main ()
 
           // Compute error of speed
           // double error_throttle;
-          // Track the desired speed from the planned trajectory endpoint,
-          // but cap speed when steering error is large to prevent overshoot.
-          double desired_speed = v_points.back();
-          // Ensure we don't stall at very low speeds.
-          if (velocity < 0.3) {
-            desired_speed = std::max(desired_speed, 1.2);
-          }
-          double dx_path = x_points[idx_closest_point] - x_position;
-          double dy_path = y_points[idx_closest_point] - y_position;
-          double cte = std::sqrt(dx_path * dx_path + dy_path * dy_path);
-          if (std::abs(error_steer) > 0.25 || cte > 0.5) {
-            desired_speed = std::min(desired_speed, 0.8);
-          } else {
-            desired_speed = std::min(desired_speed, 2.5);
-          }
-          double error_throttle = desired_speed - velocity;
+          // Compute throttle error using closest point speed
+          double error_throttle = v_points[idx_closest_point] - velocity;
 
           /**
           * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
