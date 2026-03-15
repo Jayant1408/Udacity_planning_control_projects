@@ -271,7 +271,7 @@ int main ()
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_throttle.init_controller(1.0, 1.0, 1.0, 1.0, -1.0);
   // Lower gains to reduce overshoot when approaching slower traffic.
-  pid_throttle.init_controller(0.12, 0.0003, 0.05, 1.0, -1.0);
+  pid_throttle.init_controller(0.08, 0.0002, 0.04, 1.0, -1.0);
 
 
   h.onMessage([&pid_steer, &pid_throttle, &new_delta_time, &timer, &prev_timer, &i, &prev_timer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
@@ -424,8 +424,13 @@ int main ()
 
           // Compute error of speed
           // double error_throttle;
-          // Track the desired speed from the planned trajectory endpoint.
-          double error_throttle = v_points.back() - velocity;
+          // Track the desired speed from the planned trajectory endpoint,
+          // but cap speed when steering error is large to prevent overshoot.
+          double desired_speed = v_points.back();
+          if (std::abs(error_steer) > 0.25) {
+            desired_speed = std::min(desired_speed, 1.0);
+          }
+          double error_throttle = desired_speed - velocity;
 
           /**
           * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
