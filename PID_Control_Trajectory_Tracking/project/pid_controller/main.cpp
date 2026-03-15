@@ -363,17 +363,28 @@ int main ()
           y_points
           );
 
-          // Use a small lookahead point to reduce oscillation around the path.
-          std::size_t lookahead_idx =
-              std::min<std::size_t>(idx_closest_point + 5,
-                                    x_points.size() - 1);
+          // Pick a point ahead on the path to avoid steering toward points behind.
+          std::size_t lookahead_idx = idx_closest_point;
+          const double lookahead_dist = 2.0;  // meters
+          while (lookahead_idx + 1 < x_points.size()) {
+            double dx = x_points[lookahead_idx] - x_position;
+            double dy = y_points[lookahead_idx] - y_position;
+            if (std::sqrt(dx * dx + dy * dy) >= lookahead_dist) {
+              break;
+            }
+            ++lookahead_idx;
+          }
+          lookahead_idx =
+              std::min<std::size_t>(lookahead_idx + 4, x_points.size() - 1);
 
-          double error_steer = angle_between_points(
-          x_position,
-          y_position,
-          x_points[lookahead_idx],
-          y_points[lookahead_idx]
-          ) - yaw;
+          // Use path tangent as desired heading.
+          std::size_t prev_idx =
+              (lookahead_idx > 0) ? (lookahead_idx - 1) : lookahead_idx;
+          double desired_yaw = angle_between_points(
+              x_points[prev_idx], y_points[prev_idx],
+              x_points[lookahead_idx], y_points[lookahead_idx]);
+
+          double error_steer = desired_yaw - yaw;
 
 
           while (error_steer > M_PI) error_steer -= 2.0 * M_PI;
