@@ -256,8 +256,8 @@ int main ()
   // pid_steer.init_controller(1.0, 0.0, 1.0, 1.2, -1.2);
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_steer.init_controller(1.0, 1.0, 1.0, 1.2, -1.2);
-  // Tuned for smoother path tracking with reduced oscillation.
-  pid_steer.init_controller(0.25, 0.0015, 0.15, 1.2, -1.2);
+  // Tuned for stronger left/right authority without bias.
+  pid_steer.init_controller(0.35, 0.0010, 0.22, 1.2, -1.2);
 
     // initialize pid throttle
   /**
@@ -365,7 +365,7 @@ int main ()
 
           // Use a small lookahead point to reduce oscillation around the path.
           std::size_t lookahead_idx =
-              std::min<std::size_t>(idx_closest_point + 3,
+              std::min<std::size_t>(idx_closest_point + 5,
                                     x_points.size() - 1);
 
           double error_steer = angle_between_points(
@@ -374,6 +374,7 @@ int main ()
           x_points[lookahead_idx],
           y_points[lookahead_idx]
           ) - yaw;
+
 
           while (error_steer > M_PI) error_steer -= 2.0 * M_PI;
           while (error_steer < -M_PI) error_steer += 2.0 * M_PI;
