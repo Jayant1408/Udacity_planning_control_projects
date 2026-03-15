@@ -365,7 +365,7 @@ int main ()
 
           // Pick a point ahead on the path to avoid steering toward points behind.
           std::size_t lookahead_idx = idx_closest_point;
-          const double lookahead_dist = 2.0;  // meters
+          const double lookahead_dist = 3.5;  // meters
           while (lookahead_idx + 1 < x_points.size()) {
             double dx = x_points[lookahead_idx] - x_position;
             double dy = y_points[lookahead_idx] - y_position;
@@ -386,6 +386,10 @@ int main ()
 
           double error_steer = desired_yaw - yaw;
 
+          // Avoid large steering at standstill.
+          if (velocity < 0.2) {
+            error_steer = 0.0;
+          }
 
           while (error_steer > M_PI) error_steer -= 2.0 * M_PI;
           while (error_steer < -M_PI) error_steer += 2.0 * M_PI;
@@ -427,8 +431,11 @@ int main ()
           // Track the desired speed from the planned trajectory endpoint,
           // but cap speed when steering error is large to prevent overshoot.
           double desired_speed = v_points.back();
-          if (std::abs(error_steer) > 0.25) {
-            desired_speed = std::min(desired_speed, 1.0);
+          double dx_path = x_points[idx_closest_point] - x_position;
+          double dy_path = y_points[idx_closest_point] - y_position;
+          double cte = std::sqrt(dx_path * dx_path + dy_path * dy_path);
+          if (std::abs(error_steer) > 0.25 || cte > 0.5) {
+            desired_speed = std::min(desired_speed, 0.8);
           }
           double error_throttle = desired_speed - velocity;
 
