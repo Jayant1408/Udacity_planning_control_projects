@@ -6,5 +6,5 @@ CXX_FLAGS = -pthread -fPIC -DNDEBUG -Wall -Wextra -Wl,-Bstatic -lcarla_client -l
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/home/ubuntu/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning/eigen-3.3.7 -I/opt/carla-source/LibCarla/source -I/opt/carla-source/Build/boost-1.72.0-c8-install/include -I/opt/carla-source/Build/recast-cdce4e-c8-install/include -I/opt/carla-source/Build/rpclib-v2.2.1_c2-c8-libstdcxx-install/include 
+CXX_INCLUDES = -I/home/ubuntu/Udacity_planning_control_projects/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning/eigen-3.3.7 -I/opt/carla-source/LibCarla/source -I/opt/carla-source/Build/boost-1.72.0-c8-install/include -I/opt/carla-source/Build/recast-cdce4e-c8-install/include -I/opt/carla-source/Build/rpclib-v2.2.1_c2-c8-libstdcxx-install/include 
 

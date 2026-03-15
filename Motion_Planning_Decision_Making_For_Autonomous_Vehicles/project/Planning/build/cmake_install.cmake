@@ -1,4 +1,4 @@
-# Install script for directory: /home/ubuntu/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning
+# Install script for directory: /home/ubuntu/Udacity_planning_control_projects/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -45,5 +45,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/ubuntu/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning/build/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/ubuntu/Udacity_planning_control_projects/Motion_Planning_Decision_Making_For_Autonomous_Vehicles/project/Planning/build/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")
