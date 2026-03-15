@@ -256,8 +256,8 @@ int main ()
   // pid_steer.init_controller(1.0, 0.0, 1.0, 1.2, -1.2);
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_steer.init_controller(1.0, 1.0, 1.0, 1.2, -1.2);
-  // Final run (I achieved the best results, i.e., no collisions, with these)
-  pid_steer.init_controller(0.3, 0.0025, 0.17, 0.60, -0.60);
+  // Tuned for smoother path tracking with reduced oscillation.
+  pid_steer.init_controller(0.25, 0.0015, 0.15, 1.2, -1.2);
 
     // initialize pid throttle
   /**
@@ -270,7 +270,8 @@ int main ()
   // pid_throttle.init_controller(1.0, 0.0, 1.0, 1.0, -1.0);
   // CASE 3 : Using the PID-controller (proportional-integral-derivative gain):
   // pid_throttle.init_controller(1.0, 1.0, 1.0, 1.0, -1.0);
-  pid_throttle.init_controller(0.21, 0.0006, 0.080, 1.0, -1.0);
+  // Lower gains to reduce overshoot when approaching slower traffic.
+  pid_throttle.init_controller(0.12, 0.0003, 0.05, 1.0, -1.0);
 
 
   h.onMessage([&pid_steer, &pid_throttle, &new_delta_time, &timer, &prev_timer, &i, &prev_timer](uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length, uWS::OpCode opCode)
@@ -362,11 +363,16 @@ int main ()
           y_points
           );
 
+          // Use a small lookahead point to reduce oscillation around the path.
+          std::size_t lookahead_idx =
+              std::min<std::size_t>(idx_closest_point + 3,
+                                    x_points.size() - 1);
+
           double error_steer = angle_between_points(
           x_position,
           y_position,
-          x_points[idx_closest_point],
-          y_points[idx_closest_point]
+          x_points[lookahead_idx],
+          y_points[lookahead_idx]
           ) - yaw;
 
           while (error_steer > M_PI) error_steer -= 2.0 * M_PI;
@@ -406,7 +412,8 @@ int main ()
 
           // Compute error of speed
           // double error_throttle;
-          double error_throttle = v_points[idx_closest_point] - velocity;
+          // Track the desired speed from the planned trajectory endpoint.
+          double error_throttle = v_points.back() - velocity;
 
           /**
           * TODO (step 2): compute the throttle error (error_throttle) from the position and the desired speed
